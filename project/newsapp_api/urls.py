@@ -1,9 +1,12 @@
 from django.urls import path
-from .views import NewsView, SingleNewsView
+from .views import GetNewsView, PostNewsView, PutNewsView, DelNewsView
 
 app_name = "newsapp_api"
 
 urlpatterns = [
-    path('news/', NewsView.as_view()),
-    path('news/<int:pk>', SingleNewsView.as_view())
+    path('getnews/', GetNewsView.as_view()),
+    path('postnews/', PostNewsView.as_view()),
+    path('putnews/<int:pk>', PutNewsView.as_view()),
+    path('delnews/<int:pk>', DelNewsView.as_view()),
+
 ]

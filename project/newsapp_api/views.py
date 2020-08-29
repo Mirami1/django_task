@@ -1,18 +1,50 @@
-from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
+from rest_framework.generics import get_object_or_404
+from rest_framework.views import APIView
 from rest_framework.response import Response
-
+from django_filters.rest_framework import DjangoFilterBackend
 from newsapp.models import News
 from .serializers import NewsSerializer
-
-class NewsView(ListCreateAPIView):
-    queryset = News.objects.all()
-    serializer_class = NewsSerializer
-
-    def perform_create(self, serializer):
-        news_saved = serializer.save()
-        return Response({"success": "News '{}' created succesfully".format(news_saved.heading)})
+from django.utils.datastructures import MultiValueDictKeyError
 
 
-class SingleNewsView(RetrieveUpdateDestroyAPIView):
-    queryset = News.objects.all()
-    serializer_class = NewsSerializer
+class GetNewsView(APIView):
+    def get(self, request):
+        try:
+            get_data = request.query_params
+            news = News.objects.order_by('creation_date').reverse().filter(
+                heading=get_data['header'])
+        except MultiValueDictKeyError:
+            news = News.objects.order_by('creation_date').reverse()
+        serializer = NewsSerializer(news, many=True)
+        return Response({"News": serializer.data})
+
+
+class PostNewsView(APIView):
+    def post(self, request):
+        news = request.data.get('News')
+        serializer = NewsSerializer(data=news)
+        if serializer.is_valid(raise_exception=True):
+            news_saved = serializer.save()
+        return Response({"success": "News '{}' with id='{}' created succesfully".format(news_saved.heading, news_saved.id)})
+
+
+class PutNewsView(APIView):
+    def put(self, request, pk):
+        saved_news = get_object_or_404(News.objects.all(), pk=pk)
+        data = request.data.get('News')
+        serializer = NewsSerializer(
+            instance=saved_news, data=data, partial=True)
+        if serializer.is_valid(raise_exception=True):
+            news_saved = serializer.save()
+        return Response({
+            "success": "News '{}' with id='{}' updated successfully".format(news_saved.heading, news_saved.id)
+        })
+
+
+class DelNewsView(APIView):
+    def delete(self, request, pk):
+        news = get_object_or_404(News.objects.all(), pk=pk)
+        news.delete()
+        return Response({
+            "message": "News with id `{}` has been deleted.".format(pk)
+        }, status=204)
