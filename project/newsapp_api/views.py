@@ -11,10 +11,10 @@ class GetNewsView(APIView):
     def get(self, request):
         try:
             get_data = request.query_params
-            news = News.objects.order_by('creation_date').reverse().filter(
+            news = News.objects.order_by('-creation_date').filter(
                 heading=get_data['header'])
         except MultiValueDictKeyError:
-            news = News.objects.order_by('creation_date').reverse()
+            news = News.objects.order_by('-creation_date')
         serializer = NewsSerializer(news, many=True)
         return Response({"News": serializer.data})
 
