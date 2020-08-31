@@ -15,7 +15,6 @@ class NewsFilter(filters.FilterSet):
     class Meta:
         model = News
         fields = ['title']
-        order_by = ['-update_date']
 
 
 class GetNewsView(ListModelMixin, GenericAPIView):
