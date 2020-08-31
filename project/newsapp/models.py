@@ -2,7 +2,7 @@ from django.db import models
 
 
 class News(models.Model):
-    heading = models.CharField(
+    title = models.CharField(
         max_length=80, help_text='Заголовок новости - 80 символов')
     description = models.TextField(help_text='Детальное описание')
     creation_date = models.DateField(help_text='Дата создания')

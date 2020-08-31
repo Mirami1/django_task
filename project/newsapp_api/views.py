@@ -4,16 +4,15 @@ from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from newsapp.models import News
 from .serializers import NewsSerializer
-from django.utils.datastructures import MultiValueDictKeyError
 
 
 class GetNewsView(APIView):
     def get(self, request):
-        try:
-            get_data = request.query_params
-            news = News.objects.order_by('-creation_date').filter(
-                heading=get_data['header'])
-        except MultiValueDictKeyError:
+        get_data = request.query_params.get('title', None)
+        if get_data:
+            news = News.objects.order_by(
+                '-creation_date').filter(title__istartswith=get_data)
+        else:
             news = News.objects.order_by('-creation_date')
         serializer = NewsSerializer(news, many=True)
         return Response({"News": serializer.data})
