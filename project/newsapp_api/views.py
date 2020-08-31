@@ -8,12 +8,9 @@ from .serializers import NewsSerializer
 
 class GetNewsView(APIView):
     def get(self, request):
-        get_data = request.query_params.get('title', None)
-        if get_data:
-            news = News.objects.order_by(
-                '-creation_date').filter(title__istartswith=get_data)
-        else:
-            news = News.objects.order_by('-creation_date')
+        get_data = request.query_params.get('title', "")
+        news = News.objects.order_by(
+                '-creation_date').filter(title__icontains=get_data)
         serializer = NewsSerializer(news, many=True)
         return Response({"News": serializer.data})
 
