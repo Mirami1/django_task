@@ -1,18 +1,32 @@
 from rest_framework.generics import get_object_or_404
+from rest_framework.generics import GenericAPIView
+from rest_framework.mixins import ListModelMixin
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from django_filters.rest_framework import DjangoFilterBackend
+from django_filters import rest_framework as filters
+from rest_framework.filters import OrderingFilter
 from newsapp.models import News
 from .serializers import NewsSerializer
 
 
-class GetNewsView(APIView):
-    def get(self, request):
-        get_data = request.query_params.get('title', "")
-        news = News.objects.order_by(
-                '-creation_date').filter(title__icontains=get_data)
-        serializer = NewsSerializer(news, many=True)
-        return Response({"News": serializer.data})
+class NewsFilter(filters.FilterSet):
+    title = filters.CharFilter(field_name='title', lookup_expr='icontains')
+
+    class Meta:
+        model = News
+        fields = ['title']
+        order_by = ['-update_date']
+
+
+class GetNewsView(ListModelMixin, GenericAPIView):
+    queryset = News.objects.all()
+    filter_backends = (filters.DjangoFilterBackend, OrderingFilter)
+    filterset_class = NewsFilter
+    serializer_class = NewsSerializer
+    ordering = ('-update_date',)
+
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
 
 
 class PostNewsView(APIView):
