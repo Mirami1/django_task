@@ -34,7 +34,7 @@ class PostNewsView(APIView):
         serializer = NewsSerializer(data=news)
         if serializer.is_valid(raise_exception=True):
             news_saved = serializer.save()
-        return Response({"success": "News '{}' with id='{}' created succesfully".format(news_saved.heading, news_saved.id)})
+        return Response({"success": "News '{}' with id='{}' created succesfully".format(news_saved.title, news_saved.id)})
 
 
 class PutNewsView(APIView):
@@ -46,7 +46,7 @@ class PutNewsView(APIView):
         if serializer.is_valid(raise_exception=True):
             news_saved = serializer.save()
         return Response({
-            "success": "News '{}' with id='{}' updated successfully".format(news_saved.heading, news_saved.id)
+            "success": "News '{}' with id='{}' updated successfully".format(news_saved.title, news_saved.id)
         })
 
 
