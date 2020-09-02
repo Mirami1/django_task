@@ -1,6 +1,5 @@
 from rest_framework.generics import get_object_or_404
-from rest_framework.generics import GenericAPIView
-from rest_framework.mixins import ListModelMixin
+from rest_framework.generics import CreateAPIView, ListAPIView
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django_filters import rest_framework as filters
@@ -17,18 +16,15 @@ class NewsFilter(filters.FilterSet):
         fields = ['title']
 
 
-class GetNewsView(ListModelMixin, GenericAPIView):
+class GetNewsView(ListAPIView):
     queryset = News.objects.all()
     filter_backends = (filters.DjangoFilterBackend, OrderingFilter)
     filterset_class = NewsFilter
     serializer_class = NewsSerializer
     ordering = ('-update_date',)
 
-    def get(self, request, *args, **kwargs):
-        return self.list(request, *args, **kwargs)
 
-
-class PostNewsView(APIView):
+class CreateNewsView(APIView):
     def post(self, request):
         news = request.data.get('News')
         serializer = NewsSerializer(data=news)
@@ -37,7 +33,7 @@ class PostNewsView(APIView):
         return Response({"success": "News '{}' with id='{}' created succesfully".format(news_saved.title, news_saved.id)})
 
 
-class PutNewsView(APIView):
+class UpdateNewsView(APIView):
     def put(self, request, pk):
         saved_news = get_object_or_404(News.objects.all(), pk=pk)
         data = request.data.get('News')
