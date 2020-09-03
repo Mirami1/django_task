@@ -27,14 +27,14 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
-    
+
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    
+
     'rest_framework',
     'django_filters',
     'newsapp',
@@ -42,9 +42,8 @@ INSTALLED_APPS = [
 ]
 
 
-
 DEBUG_TOOLBAR_PANELS = [
-     'debug_toolbar.panels.signals.SignalDebugPanel'
+    'debug_toolbar.panels.signals.SignalDebugPanel'
 ]
 
 REST_FRAMEWORK = {

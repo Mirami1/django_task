@@ -4,16 +4,15 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from django_filters import rest_framework as filters
 from rest_framework.filters import OrderingFilter
-from newsapp.models import News
-from .serializers import NewsSerializer
+from newsapp.models import News,Article
+from .serializers import NewsSerializer,ArticleSerializer
+from .filters import NewsFilter
 
 
-class NewsFilter(filters.FilterSet):
-    title = filters.CharFilter(field_name='title', lookup_expr='icontains')
+class GetArticleView(ListAPIView):
+    queryset = Article.objects.all()
+    serializer_class = ArticleSerializer
 
-    class Meta:
-        model = News
-        fields = ['title']
 
 
 class GetNewsView(ListAPIView):
