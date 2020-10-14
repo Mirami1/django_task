@@ -37,8 +37,8 @@ INSTALLED_APPS = [
 
     'rest_framework',
     'django_filters',
-    'newsapp',
-    'newsapp_api',
+    'products',
+    'products_api',
 ]
 
 
