@@ -135,7 +135,7 @@ class Image(models.Model):
 
 
 class NomenSet(models.Model):
-    namesetprodtype = models.SmallIntegerField(verbose_name='Положение в наборе', unique=True)
+    nomensetpodtype = models.SmallIntegerField(verbose_name='Положение в наборе')
     guid = models.CharField(verbose_name='guid', max_length=100)
 
     class Meta:
