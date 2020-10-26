@@ -1,5 +1,6 @@
 from .models import *
 import json
+from django.apps import apps
 
 
 # Полная очитска всех таблиц в БД
@@ -23,369 +24,48 @@ def clear():
 
 
 # Загрузка вспомогательных таблиц
+"""Влезаем в файл, вытаскиваем необходимый класс из словаря моделей, создаем обьект модели и заполнем по-строково
+ его поля, картинки, если есть, загружаются в отдельном методе, добавляем ключи 
+ от картинок в соответствующее поле и в конце сохраняем обьект"""
+
+
 def load_sub_tables():
     print('ЗАГРУЗКА ДОПТАБЛИЦ')
+
+    directories_models = apps.all_models['products']
     with open('get_directories.json', 'r', encoding='UTF-8') as json_file:
-
         data = json.load(json_file)
-        for model in data['models']:
+        for type in data['models']:
+            str = type['model'].lower().strip().replace('с', 'c')
+            print(str)
+            model_class = directories_models.get(str)
 
-            if model['model'] == 'Collection':
-                for item in model['items']:
-                    Collection.objects.create(name=item['name'], guid=item['guid'])
-
-            if model['model'] == 'Brands':
-                for item in model['items']:
-                    Brands.objects.create(name=item['name'], guid=item['guid'])
-
-            if model['model'] == 'Manufacturer':
-                for item in model['items']:
-                    Manufacturer.objects.create(name=item['name'], guid=item['guid'])
-
-            if model['model'] == 'Color':
-                for item in model['items']:
-                    images = []
-                    if item['images'] != '':
-                        images = get_images(im_item=item)
-
-                    Color.objects.create(name=item['name'], guid=item['guid'], nameid=item['nameid'],
-                                         nametwo=item.get('nametwo', None),
-                                         hexcode=item.get('hexcode', None)).images.set(images)
-
-            if model['model'] == 'Design':
-                for item in model['items']:
-                    Design.objects.create(name=item['name'], guid=item['guid'])
-
-            if model['model'] == 'TypeModel':
-                for item in model['items']:
-                    TypeModel.objects.create(name=item['name'], guid=item['guid'], nametypeid=item['nametypeid'])
-
-            if model['model'] == 'Size':
-                for item in model['items']:
-                    Size.objects.create(name=item['name'], guid=item['guid'])
-
-            if model['model'] == 'hashtag':
-                for item in model['items']:
-                    HashTag.objects.create(name=item['name'], guid=item['guid'])
-
-            if model['model'] == 'gendertype':
-                for item in model['items']:
-                    GenderType.objects.create(name=item['name'], guid=item['guid'])
-
-
-# Загрузка таблицы с характеристиками товаров
-def load_characteristics():
-    print('ЗАГРУЗКА ХАРАКТЕРИСТИК')
-    with open('get_products.json', 'r', encoding='UTF-8') as json_file:
-
-        data = json.load(json_file)
-        for model in data['models']:
-            if model['model'] == 'ProductOffer':
-                for item in model['items']:
-                    # Загрузка полей, некоторые простые поля в обектах пусты!
-
-                    guid = item['guid']
-                    name = item['name']
-                    article = item.get('article', None)
-                    description = item.get('description', None)
-                    composition = item.get('composition', None)
-                    smallsize = item['smallsize']
-                    length = item['length']
-                    width = item['width']
-                    height = item['height']
-                    weight = item['weight']
-                    isshoes = item['isshoes']
-                    artexh = item['artexh']
-                    mainprice = item['mainprice']
-                    mainold_price = item['mainold_price']
-                    is_new = item['is_new']
-                    is_hit = item['is_hit']
-
-                    # Очень часто это поле оказывается пустым или ссылающимся на отсутвующую фотографию
+            for item in type['items']:
+                obj = model_class()
+                for key, value in item.items():
                     try:
-                        is_mainphoto = Image.objects.get(guid=item.get('is_mainphoto', None))
-                    except Image.DoesNotExist:
-                        print('Без основной фотки guid=', item.get('is_mainphoto', None))
-                        is_mainphoto = None
-
-                    is_set = item['is_set']
-                    is_sale = item['is_sale']
-                    maintenance = item.get('maintenance', None)
-                    count = item['count']
-
-                    # В других внешних полях тоже!
-                    try:
-                        collection = Collection.objects.get(guid=item.get('collection', None))
-                    except Collection.DoesNotExist:
-                        print('Без коллекции guid=', item.get('collection', None))
-                        collection = None
-
-                    try:
-                        brand = Brands.objects.get(guid=item.get('brand', None))
-                    except Brands.DoesNotExist:
-                        print('Без бренда guid=', item.get('brand', None))
-                        brand = None
-
-                    try:
-                        manufacturer = Manufacturer.objects.get(guid=item.get('manufacturer', None))
-                    except Manufacturer.DoesNotExist:
-                        print('Без производителя guid=', item.get('manufacturer', None))
-                        manufacturer = None
-
-                    try:
-                        gender_type = GenderType.objects.get(guid=item.get('gendertype', None))
-                    except GenderType.DoesNotExist:
-                        print('Без половой принадлежности guid=', item.get('gendertype', None))
-                        gender_type = None
-
-                    # Добавление полей, которые могут ссылаться на несколько обьектов
-                    prod_types = []
-                    designs = []
-                    analogs = []
-                    addprods = []
-                    images = []
-
-                    if item['prodtypes']:
-                        for im in item['prodtypes']:
-                            if TypeModel.objects.filter(guid=im['guid']).exists():
-                                prod_types.append(TypeModel.objects.get(guid=im['guid']).id)
-                            else:
-                                print('TypeModel попался! guid=', im['guid'])
-
-                    if item['desings']:
-                        for im in item['desings']:
-                            if Design.objects.filter(guid=im['guid']).exists():
-                                designs.append(Design.objects.get(guid=im['guid']).id)
-                            else:
-                                print('Design попался! guid=', im['guid'])
-
-                    if item['images'] != '':
-                        images = get_images(im_item=item)
-
-                    if item['analogs'] != '':
-                        for im in item['analogs']:
-                            if Characteristics.objects.filter(guid=im['guid']).exists():
-                                analogs.append(Characteristics.objects.get(guid=im['guid']).id)
-                            else:
-                                print('Characteristics_1 попался, точнее не нашелся! guid=', im['guid'])
-
-                    if item['addprods'] != '':
-                        for im in item['addprods']:
-                            if Characteristics.objects.filter(guid=im['guid']).exists():
-                                addprods.append(Characteristics.objects.get(guid=im['guid']).id)
-                            else:
-                                print('Characteristics_2 попался, точнее не нашелся! guid=', im['guid'])
-
-                    characteristics = Characteristics.objects.create(guid=guid, name=name, article=article,
-                                                                     description=description,
-                                                                     composition=composition, smallsize=smallsize,
-                                                                     length=length,
-                                                                     width=width,
-                                                                     height=height, weight=weight, isshoes=isshoes,
-                                                                     artexh=artexh,
-                                                                     mainprice=mainprice,
-                                                                     mainold_price=mainold_price, is_new=is_new,
-                                                                     is_hit=is_hit,
-                                                                     is_mainphoto=is_mainphoto,
-                                                                     is_set=is_set, is_sale=is_sale,
-                                                                     maintenance=maintenance,
-                                                                     collection=collection, brand=brand,
-                                                                     manufacturer=manufacturer,
-                                                                     gender_type=gender_type, count=count,
-                                                                     category=None)
-                    # Добавление ключей к полям типа многие-ко-многим
-                    if prod_types:
-                        characteristics.prodtypes.add(*prod_types)
-                    if designs:
-                        characteristics.designs.add(*designs)
-                    if analogs:
-                        characteristics.analogs.add(*analogs)
-                    if addprods:
-                        characteristics.addprods.add(*addprods)
-                    if images:
-                        try:
-                            characteristics.images.add(*images)
-                        except Exception as e:
-                            print(e.__str__())
-                break
+                        if key == 'images' and value:
+                            print('image')
+                            obj.save()
+                            obj.images.set(load_images(value))
+                            continue
+                        elif key != 'images':
+                            setattr(obj, key, value)
+                    except Exception as e:
+                        print(e.__str__())
+                        return
+                    obj.save()
 
 
-# Загрузка таблицы с товарами
-def load_products():
-    print('ЗАГРУЗКА ТОВАРОВ')
-    with open('get_products.json', 'r', encoding='UTF-8') as json_file:
-
-        data = json.load(json_file)
-        for model in data['models']:
-            if model['model'] == 'Product':
-                for item in model['items']:
-                    # Заполнение полей
-
-                    guid = item['guid']
-                    name = item['name']
-                    isshoes = item['isshoes']
-
-                    # Такая же проблема со связанными обьектами, либо несуществующий обьект, либо вообще нет
-                    # такого поля в обьекте
-
-                    try:
-                        size = Size.objects.get(guid=item['size'])
-                    except Size.DoesNotExist:
-                        print('Не нашел размер guid=', item['size'])
-                        size = None
-                    except KeyError:
-                        print('Не нашел размер в файле')
-                        size = None
-                    try:
-                        characteristics = Characteristics.objects.get(guid=item['product_offer'])
-                    except Characteristics.DoesNotExist:
-                        print('Не нашел характеристики guid=', item['product_offer'])
-                        characteristics = None
-                    except KeyError:
-                        print('Не нашел характеристику в файле')
-
-                    articleh = item.get('articleh', None)
-                    price = item['price']
-                    old_price = item['old_price']
-                    count = item['count']
-
-                    images = []
-                    if item['images'] != '':
-                        images = get_images(im_item=item)
-
-                    product = Product.objects.create(characteristics=characteristics, name=name, guid=guid,
-                                                     isshoes=isshoes, size=size, articleh=articleh, count=count,
-                                                     price=price, old_price=old_price)
-                    if images:
-                        product.images.add(*images)
-
-
-# Загрузка наборов
-def load_sets():
-    print('ЗАГРУЗКА НАБОРОВ')
-    with open('get_products.json', 'r', encoding='UTF-8') as json_file:
-
-        data = json.load(json_file)
-        for model in data['models']:
-            if model['model'] == 'ProductOfferSet':
-                for item in model['items']:
-                    # Заполнение полей
-
-                    guid = item['guid']
-                    name = item['name']
-                    article = item.get('article', None)
-                    description = item.get('description', None)
-                    composition = item.get('composition', None)
-                    smallsize = item['smallsize']
-                    length = item['length']
-                    width = item['width']
-                    height = item['height']
-                    weight = item['weight']
-                    mainprice = item['mainprice']
-                    subprodtype = item.get('subprodtype', None)
-
-                    # Такая же проблема со связанными обьектами, либо несуществующий обьект, либо вообще нет
-                    # такого поля в обьекте
-
-                    try:
-                        collection = Collection.objects.get(guid=item.get('collection', None))
-                    except Collection.DoesNotExist:
-                        print('Без коллекции guid=', item.get('collection', None))
-                        collection = None
-
-                    try:
-                        brand = Brands.objects.get(guid=item.get('brand', None))
-                    except Brands.DoesNotExist:
-                        print('Без бренда guid=', item.get('brand', None))
-                        brand = None
-
-                    try:
-                        manufacturer = Manufacturer.objects.get(guid=item.get('manufacturer', None))
-                    except Manufacturer.DoesNotExist:
-                        print('Без производителя guid=', item.get('manufacturer', None))
-                        manufacturer = None
-
-                    try:
-                        gender_type = GenderType.objects.get(guid=item.get('gendertype', None))
-                    except GenderType.DoesNotExist:
-                        print('Без половой принадлежности guid=', item.get('gendertype', None))
-                        gender_type = None
-
-                    is_new = item['is_new']
-                    is_hit = item['is_hit']
-
-                    try:
-                        is_mainphoto = Image.objects.get(guid=item.get('is_mainphoto', None))
-                    except Image.DoesNotExist:
-                        print('Без основной фотки guid=', item.get('is_mainphoto', None))
-                        is_mainphoto = None
-
-                    is_set = item['is_set']
-                    is_sale = item['is_sale']
-                    maintenance = item.get('maintenance', None)
-
-                    images = []
-                    if item['images'] != '':
-                        images = get_images(im_item=item)
-
-                    nomen_sets = []
-
-                    if item['nomen_sets'] != '':
-                        for im in item['nomen_sets']:
-                            if not NomenSet.objects.filter(guid=im['guid']).exists():
-                                nomen_set = NomenSet.objects.create(guid=im['guid'],
-                                                                    nomensetpodtype=im['nomensetpodtype'])
-                                nomen_sets.append(nomen_set.id)
-                            else:
-                                nomen_sets.append(NomenSet.objects.get(guid=im['guid']).id)
-
-                    # Загрузка полей, которые ссылаются на себя
-
-                    analogs = []
-                    addprods = []
-
-                    if item['analogs'] != '':
-                        for im in item['analogs']:
-                            if Set.objects.filter(guid=im['guid']).exists():
-                                analogs.append(Set.objects.get(guid=im['guid']).id)
-                            else:
-                                print('Set_1 попался, точнее не нашелся! guid=', im['guid'])
-
-                    if item['addprods'] != '':
-                        for im in item['addprods']:
-                            if Set.objects.filter(guid=im['guid']).exists():
-                                addprods.append(Set.objects.get(guid=im['guid']).id)
-                            else:
-                                print('Set_2 попался, точнее не нашелся!guid=', im['guid'])
-
-                    set = Set.objects.create(guid=guid, name=name, article=article, description=description,
-                                             smallsize=smallsize, composition=composition,
-                                             length=length, width=width, height=height, weight=weight,
-                                             mainprice=mainprice, subprodtype=subprodtype,
-                                             collection=collection, brand=brand, manufacturer=manufacturer,
-                                             is_new=is_new, is_hit=is_hit, is_mainphoto=is_mainphoto,
-                                             is_set=is_set, is_sale=is_sale, maintenance=maintenance,
-                                             gender_type=gender_type)
-                    if images:
-                        set.images.add(*images)
-                    if analogs:
-                        set.analogs.add(*analogs)
-                    if addprods:
-                        set.addprods.add(*addprods)
-                    if nomen_sets:
-                        set.nomen_sets.add(*nomen_sets)
-
-
-def get_images(im_item: dict) -> list:
+# получаем словарь картинок, потом как по списку проходимся, заполняем и сохраняем картинку,
+# если его нет в таблице с картинками, в обоих случаем сохраняем id
+def load_images(im_dict: dict) -> list:
     images = []
-    for im in im_item['images']:
-        if not Image.objects.filter(imagename=im['imagename']).exists():
-            image = Image(imagename=im['imagename'], guid=im['guid'],
-                          imagesize=im['imagesize'],
-                          imageext=im['imageext'],
-                          imagemask=im['imagemask'],
-                          imagetype=im['imagetype'],
-                          imagesubtype=im.get('imagesubtype', None))
+    for im in im_dict:
+        if not Image.objects.filter(guid=im['guid']).exists():
+            image = Image()
+            for key, value in im.items():
+                setattr(image, key, value)
             try:
                 image.save()
             except Exception as e:
@@ -394,12 +74,131 @@ def get_images(im_item: dict) -> list:
 
             images.append(image.id)
         else:
-            images.append(Image.objects.get(imagename=im['imagename']).id)
+            images.append(Image.objects.get(guid=im['guid']).id)
     return images
+
+# Загрузка таблиц с характеристиками, товарами и наборами
+"""Здесь всё по-сложнее принцип примерно такой же, но прибавляеются уже костыли, некоторые поля необходимо переименовывать чтобы совпадало с моделью из БД,
+также различаем значения полей - поле может быть строкой или списком, если строка, то простой, или ключом для ссылки на другой обьект
+ если строка, то добавляем как атрибут к обьекту,
+ если строка, то ключ ссылается на другую таблицу, находим по guid/создаем id обьекта и добавляем id обьекта как поле для внешнего ключа,
+ если это список, то такое поле имеет тип многие-ко-многим, проходимся по списку, проверяем является ли элемент списка словарем или строкой, 
+ также создаем специальный словарь для хранения idшников по ссылочным полям для удобства,
+ если строка, то находим по guid idшники и кидаем в список,
+ если словарь, то проверяем по guid /создаем обьект, idшники тоже кидаем в список,
+ в конце сейвим обьект и заполняем поля многие-ко-многим,
+ потом еще раз проходимся по всем обьектам типа, но уже для заполениния двух полей типа многие-ко-многим, которые ссылаются сами на себя"""
+def load_characteristics():
+    print('ЗАГРУЗКА ДОПТАБЛИЦ')
+
+    directories_models = apps.all_models['products'] #словарь всех конструкторов моделей приложения
+    with open('get_products.json', 'r', encoding='UTF-8') as json_file:
+        data = json.load(json_file)
+        for type in data['models']:
+            str = type['model'].lower().strip()
+            print(str)
+            model_class = directories_models.get(str)
+
+            for item in type['items']:
+                obj = model_class()
+                many_to_many = {} #словарь которые хранит idшники полей многие-ко-многим
+                for key, value in item.items():
+                    try:
+                        #костыли с названиями
+                        if key == 'brand':
+                            key += 's'
+                        if key == 'prodtypes':
+                            key = 'typemodels'
+                        if key == 'desings':
+                            key = 'designs'
+                        if key == 'nomen_sets':
+                            key = 'nomensets'
+
+                        # является ли название поля моделью и значение не является ли списком
+                        if key in directories_models and value is not list:
+                            if directories_models[key].objects.filter(guid=value).exists():
+                                fk_obj = directories_models[key].objects.get(guid=value)
+                            else:
+                                fk_obj = None
+                            setattr(obj, key, fk_obj)
+                            continue
+
+                        # если значение является списком
+                        if isinstance(value, list):
+                            if key == 'analogs' or key == 'addprods': #избегаем ссылающихся сами на себя полей
+                                continue
+                            many_to_many[key] = []
+                            #проходимся по списку
+                            for item_1 in value:
+                                if len(item_1) == 1:
+                                    for key_1, value_1 in item_1.items():
+                                        if directories_models[key[:-1]].objects.filter(guid=value_1).exists():
+                                            many_to_many[key].append(
+                                                directories_models[key[:-1]].objects.get(guid=value_1).id)
+                                else:
+                                    obj_1 = directories_models[key[:-1]]()
+                                    finished = False
+                                    for key_1, value_1 in item_1.items():
+                                        if directories_models[key[:-1]].objects.filter(guid=value_1).exists():
+                                            many_to_many[key].append(
+                                                directories_models[key[:-1]].objects.get(guid=value_1).id)
+                                            break
+                                        else:
+                                            setattr(obj_1, key_1, value_1)
+                                            creation = True
+                                    if creation: #создавался ли обьект (словарь имел длину больше 1?)
+                                        try:
+                                            obj_1.save()
+                                        except Exception as e:
+                                            print(e.__str__())
+                                            return
+                                        many_to_many[key].append(obj_1.id)
+
+                            continue
+                        #если поле строковое
+                        if not isinstance(value, list):
+                            if key == 'is_mainfoto': #костыль из-за фотки
+                                if Image.objects.filter(guid=value).exists():
+                                    setattr(obj, key, Image.objects.get(guid=value).id)
+                            else:
+                                setattr(obj, key, value) #добавляем простое поле
+                    except Exception as e:
+                        print(key, value)
+                        print(str(e))
+                        return
+                obj.save()
+
+                # проходимся по словару с idшниками ссылющихся таблиц и добавляем idшники к полям многие-ко-многим
+                for key_2, value_2 in many_to_many.items():
+                    if value_2:
+                        if key_2 == 'typemodels':
+                            key_2 = 'prodtypes'
+                            getattr(obj, key_2).add(*value_2)
+                        elif key_2 == 'nomensets':
+                            key_2 = 'nomen_sets'
+                            getattr(obj, key_2).add(*value_2)
+
+                        else:
+                            getattr(obj, key_2).add(*value_2)
+
+            # проходимся снова по обьектам модели в поиске ссылающихся на себя полей
+            for item in type['items']:
+                existed_obj = model_class.objects.get(guid=item['guid'])
+                many_to_many = {'analogs': [], 'addprods': []}
+                for key, value in item.items():
+                    if key == 'addprods' or key == 'analogs':
+                        if value:
+                            for value_1 in value:
+                                if model_class.objects.filter(guid=value_1['guid']).exists():
+                                    many_to_many[key].append(
+                                        model_class.objects.get(guid=value_1['guid']).id)
+                                    continue
+
+                for key_3, value_3 in many_to_many.items():
+                    if value_3:
+                        getattr(existed_obj, key_3).add(*value_3)
 
 
 def load_all():
     load_sub_tables()
     load_characteristics()
-    load_products()
-    load_sets()

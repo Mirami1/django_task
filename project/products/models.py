@@ -2,7 +2,7 @@ from django.db import models
 
 
 class Brands(models.Model):
-    name = models.CharField(verbose_name='Название бренда', max_length=256, unique=True)
+    name = models.CharField(verbose_name='Название бренда', max_length=256)
     guid = models.CharField(verbose_name='guid', max_length=100)
 
     class Meta:
@@ -90,9 +90,9 @@ class Manufacturer(models.Model):
 
 
 class TypeModel(models.Model):
-    name = models.CharField(verbose_name='Название типа', max_length=200, unique=True)
+    name = models.CharField(verbose_name='Название типа', max_length=200)
     guid = models.CharField(verbose_name='guid', max_length=100)
-    nametypeid = models.PositiveIntegerField(verbose_name='id типа')
+    nametypeid = models.PositiveIntegerField(verbose_name='id типа',default=0)
 
     class Meta:
         verbose_name = 'Тип'
@@ -186,8 +186,8 @@ class Characteristics(models.Model):
 
     category = models.ForeignKey(Category, verbose_name='Категория', on_delete=models.CASCADE, null=True)
     collection = models.ForeignKey(Collection, verbose_name='Коллекция', on_delete=models.CASCADE, null=True)
-    brand = models.ForeignKey(Brands, on_delete=models.CASCADE, verbose_name='Бренд', null=True)
-    gender_type = models.ForeignKey(GenderType, verbose_name='Половая принадлежность', on_delete=models.CASCADE,
+    brands = models.ForeignKey(Brands, on_delete=models.CASCADE, verbose_name='Бренд', null=True)
+    gendertype = models.ForeignKey(GenderType, verbose_name='Половая принадлежность', on_delete=models.CASCADE,
                                     null=True)
     manufacturer = models.ForeignKey(Manufacturer, verbose_name='Производитель', on_delete=models.CASCADE, null=True)
 
@@ -234,7 +234,7 @@ class Set(models.Model):
     is_sale = models.BooleanField(verbose_name='Распродажа?')
 
     # maintenance
-    gender_type = models.ForeignKey(GenderType, verbose_name='Половая принадлежность', on_delete=models.CASCADE,
+    gendertype = models.ForeignKey(GenderType, verbose_name='Половая принадлежность', on_delete=models.CASCADE,
                                     null=True)
 
     images = models.ManyToManyField(Image, verbose_name='Фотографии', related_name='images_in_productset')
