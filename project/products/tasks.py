@@ -1,7 +1,11 @@
 from .models import *
 import json
 from django.apps import apps
+import logging
 
+
+logging.basicConfig(filename='app.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s',
+                        level=logging.DEBUG)
 
 # Полная очитска всех таблиц в БД
 def clear():
@@ -30,14 +34,14 @@ def clear():
 
 
 def load_sub_tables():
-    print('ЗАГРУЗКА ДОПТАБЛИЦ')
+    logging.info('ЗАГРУЗКА ДОПТАБЛИЦ')
 
     directories_models = apps.all_models['products']
     with open('get_directories.json', 'r', encoding='UTF-8') as json_file:
         data = json.load(json_file)
         for type in data['models']:
             str = type['model'].lower().strip().replace('с', 'c')
-            print(str)
+            logging.info(str)
             model_class = directories_models.get(str)
 
             for item in type['items']:
@@ -45,14 +49,14 @@ def load_sub_tables():
                 for key, value in item.items():
                     try:
                         if key == 'images' and value:
-                            print('image')
+                            logging.info('image')
                             obj.save()
                             obj.images.set(load_images(value))
                             continue
                         elif key != 'images':
                             setattr(obj, key, value)
                     except Exception as e:
-                        print(e.__str__())
+                        logging.exception('Exception occurred')
                         return
                     obj.save()
 
@@ -69,13 +73,14 @@ def load_images(im_dict: dict) -> list:
             try:
                 image.save()
             except Exception as e:
-                print(e.__str__())
+                logging.exception('Exception occurred')
                 return
 
             images.append(image.id)
         else:
             images.append(Image.objects.get(guid=im['guid']).id)
     return images
+
 
 # Загрузка таблиц с характеристиками, товарами и наборами
 """Здесь всё по-сложнее принцип примерно такой же, но прибавляеются уже костыли, некоторые поля необходимо переименовывать чтобы совпадало с моделью из БД,
@@ -88,23 +93,25 @@ def load_images(im_dict: dict) -> list:
  если словарь, то проверяем по guid /создаем обьект, idшники тоже кидаем в список,
  в конце сейвим обьект и заполняем поля многие-ко-многим,
  потом еще раз проходимся по всем обьектам типа, но уже для заполениния двух полей типа многие-ко-многим, которые ссылаются сами на себя"""
-def load_characteristics():
-    print('ЗАГРУЗКА ДОПТАБЛИЦ')
 
-    directories_models = apps.all_models['products'] #словарь всех конструкторов моделей приложения
+
+def load_characteristics():
+    logging.info('ЗАГРУЗКА ОСНОВНЫХ ТАБЛИЦ')
+
+    directories_models = apps.all_models['products']  # словарь всех конструкторов моделей приложения
     with open('get_products.json', 'r', encoding='UTF-8') as json_file:
         data = json.load(json_file)
         for type in data['models']:
             str = type['model'].lower().strip()
-            print(str)
+            logging.info(str)
             model_class = directories_models.get(str)
 
             for item in type['items']:
                 obj = model_class()
-                many_to_many = {} #словарь которые хранит idшники полей многие-ко-многим
+                many_to_many = {}  # словарь которые хранит idшники полей многие-ко-многим
                 for key, value in item.items():
                     try:
-                        #костыли с названиями
+                        # костыли с названиями
                         if key == 'brand':
                             key += 's'
                         if key == 'prodtypes':
@@ -125,10 +132,10 @@ def load_characteristics():
 
                         # если значение является списком
                         if isinstance(value, list):
-                            if key == 'analogs' or key == 'addprods': #избегаем ссылающихся сами на себя полей
+                            if key == 'analogs' or key == 'addprods':  # избегаем ссылающихся сами на себя полей
                                 continue
                             many_to_many[key] = []
-                            #проходимся по списку
+                            # проходимся по списку
                             for item_1 in value:
                                 if len(item_1) == 1:
                                     for key_1, value_1 in item_1.items():
@@ -137,7 +144,7 @@ def load_characteristics():
                                                 directories_models[key[:-1]].objects.get(guid=value_1).id)
                                 else:
                                     obj_1 = directories_models[key[:-1]]()
-                                    finished = False
+                                    creation = False
                                     for key_1, value_1 in item_1.items():
                                         if directories_models[key[:-1]].objects.filter(guid=value_1).exists():
                                             many_to_many[key].append(
@@ -146,25 +153,25 @@ def load_characteristics():
                                         else:
                                             setattr(obj_1, key_1, value_1)
                                             creation = True
-                                    if creation: #создавался ли обьект (словарь имел длину больше 1?)
+                                    if creation:  # создавался ли обьект (словарь имел длину больше 1?)
                                         try:
                                             obj_1.save()
                                         except Exception as e:
-                                            print(e.__str__())
+                                            logging.exception('Exception occurred')
                                             return
                                         many_to_many[key].append(obj_1.id)
 
                             continue
-                        #если поле строковое
+                        # если поле строковое
                         if not isinstance(value, list):
-                            if key == 'is_mainfoto': #костыль из-за фотки
+                            if key == 'is_mainfoto':  # костыль из-за фотки
                                 if Image.objects.filter(guid=value).exists():
                                     setattr(obj, key, Image.objects.get(guid=value).id)
                             else:
-                                setattr(obj, key, value) #добавляем простое поле
+                                setattr(obj, key, value)  # добавляем простое поле
                     except Exception as e:
-                        print(key, value)
-                        print(str(e))
+                        logging.error(key, value)
+                        logging.exception('Exception occurred')
                         return
                 obj.save()
 
@@ -200,5 +207,6 @@ def load_characteristics():
 
 
 def load_all():
+
     load_sub_tables()
     load_characteristics()
