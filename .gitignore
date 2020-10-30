@@ -1,4 +1,3 @@
-__pycache__/
 .idea
 *.py[cod]
 project/project/settings_local.py
