@@ -7,13 +7,22 @@ logging.basicConfig(filename='app.log', filemode='w', format='%(name)s - %(level
                     level=logging.DEBUG)
 
 city_directories = {
+    'Region': {
+        'model': Region,
+        'fields': {
+            'region_name': 'region_code',
+            'region_code': 'sub_region',
+
+        }
+
+    },
+
     'City': {
         'model': City,
         'fields': {
             'city': 'city',
-            'region_code': 'region_code',
             'code': 'code',
-            'sub_region': 'sub_region'
+            'region': 'region_code'
         }
 
     },
@@ -42,23 +51,33 @@ def clear():
     Image.objects.all().delete()
 
 
-# Загрузка вспомогательных таблиц
-
+# Загрузка городов и регионов
 
 def load_cities():
     logging.info('ЗАГРУЗКА ДОПТАБЛИЦ')
 
     with open('city.json', 'r', encoding='UTF-8') as json_file:
         data = json.load(json_file)
-        template = city_directories[data['model']]
-        if template:
-            class_of_model = template['model']
+        for template in city_directories:
+            class_of_model = city_directories[template]['model']
             for model_data in data['items']:
                 obj = class_of_model()
-                for key, value in template['fields'].items():
+                for key, value in city_directories[template]['fields'].items():
+                    if key == 'region':
+                        if Region.objects.filter(region_name=model_data[value]).exists():
+                            fk_obj = Region.objects.get(region_name=model_data[value])
+                        else:
+                            fk_obj = None
+                        setattr(obj, key, fk_obj)
+                        continue
                     setattr(obj, key, model_data.get(value, None))
-                if not class_of_model.objects.filter(city=obj.city).exists():
-                    obj.save()
+                if class_of_model == Region:
+                    if not class_of_model.objects.filter(region_code=obj.region_code).exists():
+                        obj.save()
+                else:
+                    if not class_of_model.objects.filter(code=obj.code).exists() or not class_of_model.objects.filter(
+                            code=None, city=obj.city):
+                        obj.save()
 
 
 """Влезаем в файл, вытаскиваем необходимый класс из словаря моделей, создаем обьект модели и заполнем по-строково

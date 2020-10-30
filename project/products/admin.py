@@ -19,6 +19,8 @@ admin.site.register(Characteristics)
 admin.site.register(Product)
 admin.site.register(Set)
 admin.site.register(City)
+admin.site.register(Region)
+
 
 class ColorAdmin(admin.ModelAdmin):
     list_per_page = 100

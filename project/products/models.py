@@ -13,11 +13,22 @@ class Brands(models.Model):
         return self.guid
 
 
+class Region(models.Model):
+    region_name = models.CharField(verbose_name='Регион', max_length=100)
+    region_code = models.IntegerField(verbose_name='Код региона')
+
+    class Meta:
+        verbose_name = 'Область'
+        verbose_name_plural = 'Области'
+
+    def __str__(self):
+        return self.region_name
+
+
 class City(models.Model):
     city = models.CharField(verbose_name='Город', max_length=100)
-    region_code = models.CharField(verbose_name='Регион', max_length=100)
-    code = models.IntegerField(verbose_name='Код города')
-    sub_region = models.IntegerField(verbose_name='Код региона')
+    code = models.IntegerField(verbose_name='Код города',null=True)
+    region = models.ForeignKey(Region, verbose_name='Регион', on_delete=models.CASCADE, null=True)
 
     class Meta:
         verbose_name = 'Города'

@@ -3,4 +3,3 @@ __pycache__/
 *.py[cod]
 project/project/settings_local.py
 *.json
-/project/app.log
