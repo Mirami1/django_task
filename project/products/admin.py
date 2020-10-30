@@ -18,7 +18,7 @@ admin.site.register(NomenSet)
 admin.site.register(Characteristics)
 admin.site.register(Product)
 admin.site.register(Set)
-
+admin.site.register(City)
 
 class ColorAdmin(admin.ModelAdmin):
     list_per_page = 100

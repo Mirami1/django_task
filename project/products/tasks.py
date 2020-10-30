@@ -3,11 +3,26 @@ import json
 from django.apps import apps
 import logging
 
-
 logging.basicConfig(filename='app.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s',
-                        level=logging.DEBUG)
+                    level=logging.DEBUG)
+
+city_directories = {
+    'City': {
+        'model': City,
+        'fields': {
+            'city': 'city',
+            'region_code': 'region_code',
+            'code': 'code',
+            'sub_region': 'sub_region'
+        }
+
+    },
+}
+
 
 # Полная очитска всех таблиц в БД
+
+
 def clear():
     Characteristics.objects.all().delete()
     Product.objects.all().delete()
@@ -28,6 +43,23 @@ def clear():
 
 
 # Загрузка вспомогательных таблиц
+
+def load_cities():
+    logging.info('ЗАГРУЗКА ДОПТАБЛИЦ')
+
+    with open('city.json', 'r', encoding='UTF-8') as json_file:
+        data = json.load(json_file)
+        template = city_directories[data['model']]
+        if template:
+            class_of_model = template['model']
+            for model_data in data['items']:
+                obj = class_of_model()
+                for key, value in template['fields'].items():
+                    setattr(obj, key, model_data.get(value, None))
+                if not class_of_model.objects.filter(city=obj.city).exists():
+                    obj.save()
+
+
 """Влезаем в файл, вытаскиваем необходимый класс из словаря моделей, создаем обьект модели и заполнем по-строково
  его поля, картинки, если есть, загружаются в отдельном методе, добавляем ключи 
  от картинок в соответствующее поле и в конце сохраняем обьект"""
@@ -207,6 +239,5 @@ def load_characteristics():
 
 
 def load_all():
-
     load_sub_tables()
     load_characteristics()

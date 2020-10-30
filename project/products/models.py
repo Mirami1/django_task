@@ -13,6 +13,20 @@ class Brands(models.Model):
         return self.guid
 
 
+class City(models.Model):
+    city = models.CharField(verbose_name='Город', max_length=100)
+    region_code = models.CharField(verbose_name='Регион', max_length=100)
+    code = models.IntegerField(verbose_name='Код города')
+    sub_region = models.IntegerField(verbose_name='Код региона')
+
+    class Meta:
+        verbose_name = 'Города'
+        verbose_name_plural = 'Города'
+
+    def __str__(self):
+        return self.city
+
+
 class Category(models.Model):
     """
     Добавить уровни (Структура дерева ?)
@@ -92,7 +106,7 @@ class Manufacturer(models.Model):
 class TypeModel(models.Model):
     name = models.CharField(verbose_name='Название типа', max_length=200)
     guid = models.CharField(verbose_name='guid', max_length=100)
-    nametypeid = models.PositiveIntegerField(verbose_name='id типа',default=0)
+    nametypeid = models.PositiveIntegerField(verbose_name='id типа', default=0)
 
     class Meta:
         verbose_name = 'Тип'
@@ -188,7 +202,7 @@ class Characteristics(models.Model):
     collection = models.ForeignKey(Collection, verbose_name='Коллекция', on_delete=models.CASCADE, null=True)
     brands = models.ForeignKey(Brands, on_delete=models.CASCADE, verbose_name='Бренд', null=True)
     gendertype = models.ForeignKey(GenderType, verbose_name='Половая принадлежность', on_delete=models.CASCADE,
-                                    null=True)
+                                   null=True)
     manufacturer = models.ForeignKey(Manufacturer, verbose_name='Производитель', on_delete=models.CASCADE, null=True)
 
     prodtypes = models.ManyToManyField(TypeModel, verbose_name='Тип')
@@ -235,7 +249,7 @@ class Set(models.Model):
 
     # maintenance
     gendertype = models.ForeignKey(GenderType, verbose_name='Половая принадлежность', on_delete=models.CASCADE,
-                                    null=True)
+                                   null=True)
 
     images = models.ManyToManyField(Image, verbose_name='Фотографии', related_name='images_in_productset')
     analogs = models.ManyToManyField("self", verbose_name='Аналоги')
