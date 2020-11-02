@@ -14,19 +14,19 @@ class Brands(models.Model):
 
 
 class Region(models.Model):
-    region_name = models.CharField(verbose_name='Регион', max_length=100)
-    region_code = models.IntegerField(verbose_name='Код региона')
+    name = models.CharField(verbose_name='Регион', max_length=100)
+    code = models.IntegerField(verbose_name='Код региона',null=True)
 
     class Meta:
         verbose_name = 'Область'
         verbose_name_plural = 'Области'
 
     def __str__(self):
-        return self.region_name
+        return self.name
 
 
 class City(models.Model):
-    city = models.CharField(verbose_name='Город', max_length=100)
+    name = models.CharField(verbose_name='Город', max_length=100)
     code = models.IntegerField(verbose_name='Код города',null=True)
     region = models.ForeignKey(Region, verbose_name='Регион', on_delete=models.CASCADE, null=True)
 
@@ -35,7 +35,7 @@ class City(models.Model):
         verbose_name_plural = 'Города'
 
     def __str__(self):
-        return self.city
+        return self.name
 
 
 class Category(models.Model):

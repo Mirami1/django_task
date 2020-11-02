@@ -10,8 +10,8 @@ city_directories = {
     'Region': {
         'model': Region,
         'fields': {
-            'region_name': 'region_code',
-            'region_code': 'sub_region',
+            'name': 'region_code',
+            'code': 'sub_region',
 
         }
 
@@ -20,7 +20,7 @@ city_directories = {
     'City': {
         'model': City,
         'fields': {
-            'city': 'city',
+            'name': 'city',
             'code': 'code',
             'region': 'region_code'
         }
@@ -53,6 +53,21 @@ def clear():
 
 # Загрузка городов и регионов
 
+# способ в лоб, самый быстрый
+def load_cities_2():
+    logging.info('ЗАГРУЗКА ДОПТАБЛИЦ')
+
+    with open('city.json', 'r', encoding='UTF-8') as json_file:
+        data = json.load(json_file)
+        for model_data in data['items']:
+            obj = City()
+            setattr(obj, 'name', model_data.get('city', None))
+            setattr(obj, 'code', model_data.get('code', None))
+            fk_obj = Region.objects.get_or_create(name=model_data['region_code'], code=model_data['sub_region'])
+            setattr(obj, 'region', fk_obj[0])
+            obj.save()
+
+
 def load_cities():
     logging.info('ЗАГРУЗКА ДОПТАБЛИЦ')
 
@@ -62,22 +77,20 @@ def load_cities():
             class_of_model = city_directories[template]['model']
             for model_data in data['items']:
                 obj = class_of_model()
+
                 for key, value in city_directories[template]['fields'].items():
                     if key == 'region':
-                        if Region.objects.filter(region_name=model_data[value]).exists():
-                            fk_obj = Region.objects.get(region_name=model_data[value])
-                        else:
-                            fk_obj = None
+                        # ищем регион по его названию (region_code в файле)
+                        # по sub_code невозможно, потому что по нему больше одного региона могут быть
+                        # get_or_create требует иметь все поля дочерней таблицы, не подходит
+                        fk_obj = Region.objects.get(name=model_data[value])
                         setattr(obj, key, fk_obj)
                         continue
+
                     setattr(obj, key, model_data.get(value, None))
-                if class_of_model == Region:
-                    if not class_of_model.objects.filter(region_code=obj.region_code).exists():
-                        obj.save()
-                else:
-                    if not class_of_model.objects.filter(code=obj.code).exists() or not class_of_model.objects.filter(
-                            code=None, city=obj.city):
-                        obj.save()
+
+                if not class_of_model.objects.filter(name=obj.name).exists():
+                    obj.save()
 
 
 """Влезаем в файл, вытаскиваем необходимый класс из словаря моделей, создаем обьект модели и заполнем по-строково
