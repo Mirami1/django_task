@@ -6,28 +6,6 @@ import logging
 logging.basicConfig(filename='app.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s',
                     level=logging.DEBUG)
 
-city_directories = {
-    'Region': {
-        'model': Region,
-        'fields': {
-            'name': 'region_code',
-            'code': 'sub_region',
-
-        }
-
-    },
-
-    'City': {
-        'model': City,
-        'fields': {
-            'name': 'city',
-            'code': 'code',
-            'region': 'region_code'
-        }
-
-    },
-}
-
 
 # Полная очитска всех таблиц в БД
 
@@ -54,7 +32,7 @@ def clear():
 # Загрузка городов и регионов
 
 # способ в лоб, самый быстрый
-def load_cities_2():
+def load_cities():
     logging.info('ЗАГРУЗКА ДОПТАБЛИЦ')
 
     with open('city.json', 'r', encoding='UTF-8') as json_file:
@@ -68,29 +46,6 @@ def load_cities_2():
             obj.save()
 
 
-def load_cities():
-    logging.info('ЗАГРУЗКА ДОПТАБЛИЦ')
-
-    with open('city.json', 'r', encoding='UTF-8') as json_file:
-        data = json.load(json_file)
-        for template in city_directories:
-            class_of_model = city_directories[template]['model']
-            for model_data in data['items']:
-                obj = class_of_model()
-
-                for key, value in city_directories[template]['fields'].items():
-                    if key == 'region':
-                        # ищем регион по его названию (region_code в файле)
-                        # по sub_code невозможно, потому что по нему больше одного региона могут быть
-                        # get_or_create требует иметь все поля дочерней таблицы, не подходит
-                        fk_obj = Region.objects.get(name=model_data[value])
-                        setattr(obj, key, fk_obj)
-                        continue
-
-                    setattr(obj, key, model_data.get(value, None))
-
-                if not class_of_model.objects.filter(name=obj.name).exists():
-                    obj.save()
 
 
 """Влезаем в файл, вытаскиваем необходимый класс из словаря моделей, создаем обьект модели и заполнем по-строково
