@@ -15,7 +15,7 @@ class Brands(models.Model):
 
 class Region(models.Model):
     name = models.CharField(verbose_name='Регион', max_length=100)
-    code = models.IntegerField(verbose_name='Код региона',null=True)
+    code = models.IntegerField(verbose_name='Код региона')
 
     class Meta:
         verbose_name = 'Область'
@@ -27,8 +27,8 @@ class Region(models.Model):
 
 class City(models.Model):
     name = models.CharField(verbose_name='Город', max_length=100)
-    code = models.IntegerField(verbose_name='Код города',null=True)
-    region = models.ForeignKey(Region, verbose_name='Регион', on_delete=models.CASCADE, null=True)
+    code = models.IntegerField(verbose_name='Код города')
+    region = models.ForeignKey(Region, verbose_name='Регион', on_delete=models.CASCADE)
 
     class Meta:
         verbose_name = 'Города'

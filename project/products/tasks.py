@@ -38,9 +38,11 @@ def load_cities():
     with open('city.json', 'r', encoding='UTF-8') as json_file:
         data = json.load(json_file)
         for model_data in data['items']:
+            if model_data.get('code', None) is None:
+                continue
             obj = City()
             obj.name = model_data['city']
-            obj.code = model_data.get('code', None)
+            obj.code = model_data['code']
             fk_obj = Region.objects.get_or_create(name=model_data['region_code'], code=model_data['sub_region'])
             obj.region = fk_obj[0]
             obj.save()
