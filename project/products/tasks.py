@@ -39,13 +39,11 @@ def load_cities():
         data = json.load(json_file)
         for model_data in data['items']:
             obj = City()
-            setattr(obj, 'name', model_data.get('city', None))
-            setattr(obj, 'code', model_data.get('code', None))
+            obj.name = model_data['city']
+            obj.code = model_data.get('code', None)
             fk_obj = Region.objects.get_or_create(name=model_data['region_code'], code=model_data['sub_region'])
-            setattr(obj, 'region', fk_obj[0])
+            obj.region = fk_obj[0]
             obj.save()
-
-
 
 
 """Влезаем в файл, вытаскиваем необходимый класс из словаря моделей, создаем обьект модели и заполнем по-строково
