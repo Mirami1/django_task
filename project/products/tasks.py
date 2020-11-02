@@ -41,10 +41,11 @@ def load_cities():
             if model_data.get('code', None) is None:
                 continue
             obj = City()
+            fk_obj = Region.objects.get_or_create(name=model_data['region_code'])[0]
+            fk_obj.code = model_data['sub_region']
             obj.name = model_data['city']
             obj.code = model_data['code']
-            fk_obj = Region.objects.get_or_create(name=model_data['region_code'], code=model_data['sub_region'])
-            obj.region = fk_obj[0]
+            obj.region = fk_obj
             obj.save()
 
 

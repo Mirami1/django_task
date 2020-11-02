@@ -15,7 +15,7 @@ class Brands(models.Model):
 
 class Region(models.Model):
     name = models.CharField(verbose_name='Регион', max_length=100)
-    code = models.IntegerField(verbose_name='Код региона')
+    code = models.IntegerField(verbose_name='Код региона',null=True)
 
     class Meta:
         verbose_name = 'Область'
