@@ -38,25 +38,19 @@ def load_cities():
     with open('city.json', 'r', encoding='UTF-8') as json_file:
         data = json.load(json_file)
         for model_data in data['items']:
-            region = None
-            fk_obj = Region.objects.get_or_create(name=model_data['region_code'])
-            if not fk_obj[1]:
-                region = fk_obj[0]
-            else:
-                if model_data.get('sub_region', None) is None:
-                    fk_obj[0].delete()
-                else:
-                    fk_obj[0].code = model_data['sub_region']
-                    region = fk_obj[0]
+            region = Region.objects.get_or_create(code=model_data['sub_region'])[0]
+            region.name = model_data['region_code']
+            region.save()
 
-            if model_data.get('code', None) is None:
-                continue
-            obj = City()
+            if not model_data.get('code', None) is None:
+                city = City.objects.get_or_create(code=model_data['code'])[0]
+                city.name = model_data['city']
+                city.region = region
+                city.save()
 
-            obj.name = model_data['city']
-            obj.code = model_data['code']
-            obj.region = region
-            obj.save()
+
+
+
 
 
 """Влезаем в файл, вытаскиваем необходимый класс из словаря моделей, создаем обьект модели и заполнем по-строково
